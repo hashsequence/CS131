@@ -1,0 +1,72 @@
+(*
+strongly typed vs weakly typed
+can or cannot work arount the type system
+strongly typed: a value has a type and that type cannot change
+weakly typed: possible to change the type of variable
+
+exception NotFound of string
+
+exception <NAME> (of <param>)
+
+try 
+dirty_code
+with
+cases
+<NAME1>
+| ....
+
+let product l = 
+try 
+List.fold_left (fun a x -> if x = 0 then raise Exit else a * x) l l
+with Exit -> 0
+
+we can use exit to optimize, see above
+
+parametric polymorphism is where a function can take arguments of multiple type
+
+we can use type variables like 'a
+
+when we call function
+compiler instantiates all the type variables 
+overloading is different because in overloading it means we can use functions of the same name
+variables, functions, recursion,list,typles,pattern matching,user-defined types,options, exceptions
+first class functions
+higher order functions
+currying is where a function takes a function and returns a new function and 
+so on
+
+scoping:static vs dynamic
+type safety: static vs dynamic, strongly typed vs weakly typed
+ *)
+
+let rec get1 k l = match l with
+  | [] -> None
+  | (a1,b1)::t -> if a1 = k then Some b1 else get1 k t;;
+
+let rec joindicts l1 l2 =
+  match l1 with
+    [] -> []
+  | (a1,b2)::t -> match get1 b2 l2 with
+                  None -> joindicts t l2
+                  |Some c -> (a1,c)::joindicts t l2
+
+let joindicts l1 l2 = List.fold_right (fun (a,b) acc -> match get1 b 12 with
+                                                  |None -> acc
+                                                  |Some c -> (a,c)::acc)  l1 []
+(*
+n ary trees
+ *)
+
+type  tree = Leaf | Node of int* tree list
+
+let rec (incTree : int -> tree -> tree) =
+  fun n t -> match t with
+               Leaf -> Leaf
+             | Node (v, t') -> Node (v + n, List.map (incTree n) t')
+
+type lazylist = Nil | Cons of int * (unit -> lazylist);;
+let head (Cons(x,f)) = x;;
+let tail(Cons(x,f)) = f();;
+
+let rec (intsFrom : int -> lazylist) =
+  fun n -> Cons(n, (fun () -> intsFrom n+1))

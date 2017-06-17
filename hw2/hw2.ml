@@ -1,0 +1,128 @@
+exception ImplementMe
+(*
+AVERY WONG
+UID: 904582269
+SPRING 2017 Millstein
+ *)
+(* Problem 1: Vectors and Matrices *)
+
+(* type aliases for vectors and matrices *)            
+type vector = float list                                 
+type matrix = vector list
+
+let (vplus : vector -> vector -> vector) =
+  fun v1 v2 ->
+  List.map2 (fun x -> fun y -> x +. y)  v1 v2
+
+let (mplus : matrix -> matrix -> matrix) =
+  fun m1 m2 ->
+  List.map2 (fun x -> fun y -> vplus x y)  m1 m2
+
+let (dotprod : vector -> vector -> float) =
+  fun v1 v2 ->
+  List.fold_left2 (fun rest a1 b1 -> (a1 *. b1) +. rest ) 0.0  v1 v2 
+
+let (transpose : matrix -> matrix) =
+  fun m ->
+  match m with
+  (*_ -> let rec rectranspose (m : matrix) : matrix =
+   match m with
+   [] -> []
+   |[] :: rest -> rectranspose rest
+  | (h::t)::rest -> (h::(List.map List.hd rest)) :: (rectranspose (t :: (List.map List.tl rest)))
+   in rectranspose m*)
+    _ -> let append_col  m1 c1 = match m1 with [] -> List.map (fun x -> [x]) c1 | _ -> List.map2 (fun y x -> y@[x]) m1 c1 in
+        List.fold_left append_col [] m
+         
+
+let (mmult : matrix -> matrix -> matrix) =
+  fun m1 m2 -> List.map (fun x -> List.map (fun y -> dotprod x y)(transpose m2)) (m1)  
+
+        
+(* Problem 2: Calculators *)           
+           
+(* a type for arithmetic expressions *)
+type op = Add | Sub | Mult | Div
+type exp = Num of float | BinOp of exp * op * exp
+
+let rec (evalExp : exp -> float) =
+  fun expression ->
+  match expression with
+    Num (q) -> q
+  | BinOp (operand1,operator,operand2) -> 
+      if operator = Add then 
+       match operand1 with
+         Num (q1) -> ( match operand2 with Num (q2) -> q1 +. q2 | BinOp (_,_,_) -> q1 +. (evalExp operand2))
+       | BinOp (_,_,_) -> ( match operand2 with Num (q2) -> (evalExp operand1) +. q2 |  BinOp (_,_,_) ->  (evalExp operand1) +. (evalExp operand2) )
+      else if operator = Sub then 
+       match operand1 with
+         Num (q1) ->  ( match operand2 with Num (q2) -> q1 -. q2 | BinOp (_,_,_) -> q1 -. (evalExp operand2) )
+       | BinOp (_,_,_) -> ( match operand2 with Num (q2) -> (evalExp operand1) -. q2 |  BinOp (_,_,_) ->  (evalExp operand1) -. (evalExp operand2) )
+      else if operator = Mult then
+       match operand1 with
+         Num (q1) ->  ( match operand2 with Num (q2) -> q1 *. q2 | BinOp (_,_,_) -> q1 *. (evalExp operand2) )
+       | BinOp (_,_,_) -> ( match operand2 with Num (q2) -> (evalExp operand1) *. q2 |  BinOp (_,_,_) ->  (evalExp operand1) *. (evalExp operand2) )
+      else 
+       match operand1 with
+         Num (q1) ->  ( match operand2 with Num (q2) -> q1 /. q2 | BinOp (_,_,_) -> q1 /. (evalExp operand2) )
+       | BinOp (_,_,_) -> ( match operand2 with Num (q2) -> (evalExp operand1) /. q2 |  BinOp (_,_,_) ->  (evalExp operand1) /. (evalExp operand2) )
+     
+(* a type for stack instructions *)	  
+type instr = Push of float | Swap | Calculate of op
+(*
+let stack1 =  [Push 1.0; Push 2.0; Calculate Add; Push 3.0; Calculate Mult]
+let expression1 = BinOp(BinOp(Num(1.0),Add,Num(2.0)),Mult,Num(3.0))
+let stack2 = [Push 2.0; Push 3.0; Calculate Add; Push 1.0; Swap; Calculate Sub]
+let stack3 = [Push 1.0; Push 2.0; Push 3.0; Calculate Add; Calculate Sub]
+let m = [[1.0;2.0;3.0];[4.0;5.0;6.0];[7.0;8.0;9.0]];;
+let m1 = [[1.0;2.0;3.0;10.0];[4.0;5.0;6.0;11.0];[7.0;8.0;9.0;12.0]];;
+let m2 = [[1.0;2.0;3.0];[4.0;5.0;6.0];[7.0;8.0;9.0];[10.0;11.0;12.0]];;
+  *)         
+let (execute : instr list -> float) =
+  fun l -> let rec helperExe l s =
+             match l with
+               [] -> s
+             | h::t ->
+                match h with
+                  Push(q) -> helperExe t (q::s)
+                 |Swap -> let helperSwap s1 = match s1 with h1::h2::t1 -> h2::h1::t1 | _ -> s1 in helperExe t (helperSwap s)
+                 |Calculate(operator) -> let helperCalculate s1 o =  match s1 with h1::h2::t1 -> if o = Add then h1 +. h2
+                                                                                                  else if o = Sub then h1 -. h2
+                                                                                                  else if o = Mult then h1 *. h2
+                                                                                                  else h1 /. h2
+                                          in match s with h1::h2::t1 -> helperExe t ((helperCalculate s operator)::t1)
+           in match (helperExe l []) with a::rest -> a
+                                                      
+                              
+let (compile : exp -> instr list) =
+  fun expression -> let rec helperComp express =
+                      match express with
+                        Num(q) -> [Push(q)]
+                      | BinOp(operand1,operator,operand2) ->
+                         match operand1 with
+                           Num(q1)-> (match operand2 with
+                                       Num(q2)-> Push(q1)::Push(q2)::[Calculate(operator)]
+                                      | _ -> Push(q1)::((helperComp operand2)@[Calculate(operator)]))
+                         | _ -> (match operand2 with
+                                   Num(q2) -> (helperComp operand1)@(Push(q2)::[Calculate(operator)])
+                                 | _ -> (helperComp operand1)@(helperComp operand2)@[Calculate(operator)])
+                              in helperComp expression
+                                    
+let (decompile : instr list -> exp) =
+  fun mylist -> let rec helperDecomp l s =
+                  match l with
+                    [] -> s
+                   |h::t -> match h with
+                              Push(q) -> helperDecomp t (Num(q)::s) 
+                            | Swap -> let helperSwap s1 = match s1 with h1::h2::t1 -> h2::h1::t1 | _ -> s1 in helperDecomp t (helperSwap s)
+                            | Calculate(operator) -> let helperCalculate s1 o =  match s1 with h1::h2::t1 -> if o = Add then BinOp(h1,Add,h2)
+                                                                                                             else if o = Sub then BinOp(h1,Sub,h2)
+                                                                                                             else if o = Mult then BinOp(h1,Mult,h2)
+                                                                                                             else BinOp(h1,Div,h2)
+                                                     in match s with h1::h2::t1 -> helperDecomp t ((helperCalculate s operator)::t1)
+                   in match (helperDecomp mylist []) with ans::rest -> ans
+
+(* EXTRA CREDIT *)        
+let (compileOpt : exp -> (instr list * int)) =
+  raise ImplementMe
+

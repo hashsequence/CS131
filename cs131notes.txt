@@ -1,0 +1,2953 @@
+infiniteuncountable
+============================================================================================
+week1.1
+============================================================================================
+c/c+
+based on assumptions true in 70's and 80's
+-memory is scarece
+-computers are slow
+-programs live in a trusted environment
+
+each language has its niche
+in todays world, in many settings:
+memory is plentiful
+computers are fast
+programs live in an untrusted environment
+
+hence languages should be high level and safe
+provide powerful abstractions that hide low level details 
+ensure saftey properties for all programs 
+
+nearly all languages other than c and c++ are memory safe
+no possibility for the above memory errors
+more generaglly, no way to get an undefined state
+how is this achieved?
+pointers are not exposed by the language
+memory cannoty be explicitly freed
+memory safety checks are performed during execution
+
+	array bound checks, nullpointer checks
+
+oCaml
+-----
+
+functional programming
+
+encourages a style of programming where variables are never reassigned 
+after initialization 
+
+a function is a pure mathematical function:
+everytime you call it with same argument value,
+it returns the same result
+
+why is it a good thing?
+
+*easy parallelism 
+
+mapReduce
+(Apache Hadoop)
+
+Spark
+
+*greatly simpifies program reasoning
+-dont need to keep track of pointers
+*much simpler lanuage design 
+
+
+[classave@lnxsrv09 ~]$ find /usr/local/cs/bin/ocaml
+/usr/local/cs/bin/ocaml
+[classave@lnxsrv09 ~]$ export PATH=/usr/local/cs/bin:$PATH
+[classave@lnxsrv09 ~]$ ocaml
+        OCaml version 4.04.0
+
+# 42 + 8;;
+- : int = 50
+# let x = 42 + 8;;
+val x : int = 50
+# x*2;;
+- : int = 100
+# let x = 42+8
+  +20;;
+val x : int = 70
+
+double semicolon tells interpreter to endline of code
+
+in the above case olde x = 50 is not accessible anymore
+in Ocaml cannot update variables
+
+you can declare a new variable of same name and shadows the old variable
+*immutable* --cant change the value after the fact
+*function expression* has the form
+
+"function" var "->" body
+
+ex:
+# let double = (function z -> z * 2);;
+val double : int -> int = <fun>
+
+function z -> x*2
+
+*) the function is declaring z as its formal parameter
+*) the function has no name
+*) the body of function is z*2
+
+calling the anonymous funcition
+
+# double(45);;
+- : int = 90
+# double 45
+  ;;
+- : int = 90
+
+shadowing in practice:
+# let z = 24;;
+val z : int = 24
+# let returnsZ = function _ -> z;;
+val returnsZ : 'a -> int = <fun>
+# returnsZ 0;;
+- : int = 24
+# returnsZ 0;;
+- : int = 24
+# returnsZ 1;;
+- : int = 24
+# let z = 3;;
+val z : int = 3
+# returnsZ 0;;
+- : int = 24
+
+note: when the function was made it only saw the previous z
+whatever happens later wont update previous stuff
+
+# let y = 0;;
+val y : int = 0
+# let y = 1;;
+val y : int = 1
+
+garbage collection might clean the previous y if it was not referenced 
+anywhere
+
+# let quadruple = function u -> (double u) + (double u);;
+val quadruple : int -> int = <fun>
+# quadruple 50;;
+- : int = 200
+# let quadruple u = (double u) + (double u);;
+val quadruple : int -> int = <fun>
+# let quadruple (u:int) = (double u) + (double u);;
+val quadruple : int -> int = <fun>
+# let quadruple (u:string) = (double u) + (double u);;
+Error: This expression has type string but an expression was expected of type
+         int
+
+*no for loops so need to use recursion:
+
+# let rec factorial =
+  (function n ->
+  if n=0 then 1 else n* (factorial (n-1)));;
+val factorial : int -> int = <fun>
+#
+
+*need to use rec to define recurssibe function
+
+*how to lightweight trace your code
+# #trace factorial;;
+factorial is now traced.
+# factorial 5
+  ;;
+factorial <-- 5
+factorial <-- 4
+factorial <-- 3
+factorial <-- 2
+factorial <-- 1
+factorial <-- 0
+factorial --> 1
+factorial --> 1
+factorial --> 2
+factorial --> 6
+factorial --> 24
+factorial --> 120
+- : int = 120
+# #untrace factorial;;
+factorial is no longer traced.
+
+*pattern matching in Ocaml
+
+# let rec factorial n =
+  match n with
+  0 -> 1
+  | _ -> n * (factorial (n-1));;
+val factorial : int -> int = <fun>
+#
+
+*note: above is same as previous declaration of factorial
+
+conditional expressions:
+	if E then E else E
+
+match expressions:
+	match E with P1 -> E1 | ... | Pn -> En
+
+ex. of isEven function in Ocaml
+
+# let rec isEven n =
+  match n with
+  0 -> true
+  | 1 -> false
+  | _ -> isEven (n-2);;
+val isEven : int -> bool = <fun>
+
+# let rec isEven n =
+  match abs n with
+  0 -> true
+  | 1 -> false
+  | _ -> isEven (n-2);;
+val isEven : int -> bool = <fun>
+
+
+# let rec isEvenAlt n =
+  match n with
+  0 -> true
+  | 1-> false
+  | _ when n > 0 -> isEvenAlt (n-2)
+  | _ -> isEvenAlt (n+2);;
+val isEvenAlt : int -> bool = <fun>
+
+*lists in ocaml
+# [];;
+- : 'a list = []
+# [1;2;3];;
+- : int list = [1; 2; 3]
+# ["hi"; "there"];;
+- : string list = ["hi"; "there"]
+# [[1;2;3]; [4;5;6]];;
+- : int list list = [[1; 2; 3]; [4; 5; 6]]
+# [1;"one"];;
+Error: This expression has type string but an expression was expected of type
+         int
+
+* there is an operation called "con"
+
+# 0::[1;2;3];;
+- : int list = [0; 1; 2; 3]
+# let l = [1;2;3];;
+val l : int list = [1; 2; 3]
+# l;;
+- : int list = [1; 2; 3]
+
+# 0::l;;
+- : int list = [0; 1; 2; 3]
+# l;;
+- : int list = [1; 2; 3]
+
+# 0::[1;2;3];;
+- : int list = [0; 1; 2; 3]
+# let l = [1;2;3];;
+val l : int list = [1; 2; 3]
+# l;;
+- : int list = [1; 2; 3]
+# 0::l;;
+- : int list = [0; 1; 2; 3]
+# l;;
+- : int list = [1; 2; 3]
+
+
+# let l2 = 0::l;;
+val l2 : int list = [0; 1; 2; 3]
+# l2;;
+- : int list = [0; 1; 2; 3]
+# l;;
+- : int list = [1; 2; 3]
+# l@l2;;
+- : int list = [1; 2; 3; 0; 1; 2; 3]
+# 1::(2::(3::[]));;
+- : int list = [1; 2; 3]
+
+*using h::t, h stands for heads and t for tails
+
+# let rec sumLst l =
+  match l with
+  [] -> 0
+  | h::t -> h + (sumLst t);;
+val sumLst : int list -> int = <fun>trtra
+# sumLst [4;5;6];;
+- : int = 15
+
+# sumLst [1;2;3];;
+sumLst <-- [1; 2; 3]
+sumLst <-- [2; 3]
+sumLst <-- [3]
+sumLst <-- []
+sumLst --> 0
+sumLst --> 3
+sumLst --> 5
+sumLst --> 6
+- : int = 6
+=================================================================================
+week 1.2
+==================================================================================
+(* a grammar for the subset of OCaml we've seen
+E ::= c | X | E OP E |
+   | function X -> E
+   | if E then E else E
+   | match E with P -> E '|' ... '| P-> E
+   | [] | E :: E
+   | let X = E in E
+
+C ::= - | 1 | 2 | ... | true | false
+X ::= variable names
+
+P ::= C | _ | P :: P | X | [p1;p2;p3;..;pn]
+
+variables can be patterns
+
+OP ::= + | - | * | < | ...let rec sum
+
+pattern matching head and tail
+*the warnings 
+
+*note: the below example is IMPORTANT
+# let rec sumLst =
+  function l ->
+  match l with
+  [] -> 0
+  | h::t -> h + (sumLst t);;
+val sumLst : int list -> int = <fun>
+# let l = [1;2;3];;
+val l : int list = [1; 2; 3]
+# let h::t = [];;
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+[]
+Exception: Match_failure ("//toplevel//", 5, -50).
+# let h::t = l;;
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+[]
+val h : int = 1
+val t : int list = [2; 3]
+# let h1::h2::t = l;;
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+(_::[]|[])
+val h1 : int = 1
+val h2 : int = 2
+val t : int list = [3]
+# let h1::(h2::t) = l;;
+Warning 8: this pattern-matching is not exhaustive.
+Here is an example of a case that is not matched:
+(_::[]|[])
+val h1 : int = 1
+val h2 : int = 2
+val t : int list = [3]
+#
+
+everyOther [] = []
+everyOther [1] = [1]
+everyOther [1;2] = [1]
+everyOther [1;2;3] = [1,3]
+
+let rec everyOther l = 
+   match l with 
+      [] -> []
+      | first::_::rest -> first :: (everyOther rest)
+      | first::_ -> [first]
+
+*note: only ther last element of the "kong" is a list 
+*notes: "use file.ml" to open script 
+*notes: instead of first::_ -> [first] you can do _ -> l
+*[_] means alist of any single element
+
+let rec everyOther l =
+   match l with
+     [] -> []
+   | _::[] -> l
+   |first:second::rest -> first :: (everyOther rest)
+
+*note: if you want to comment out in ocaml you can fo (*<stuff>*)
+
+*example of everyOther:
+# let rec everyOther l =
+   match l with
+    [] -> []
+  | _::[] -> l
+  | first::second::rest -> first :: (everyOther rest);;
+val everyOther : 'a list -> 'a list = <fun>
+# everyOther [1;2;3;4;5];;
+- : int list = [1; 3; 5]
+
+everyOther is now traced.
+# everyOther [1;2;3;4;5];;
+everyOther <-- [<poly>; <poly>; <poly>; <poly>; <poly>]
+everyOther <-- [<poly>; <poly>; <poly>]
+everyOther <-- [<poly>]
+everyOther --> [<poly>]
+everyOther --> [<poly>; <poly>]
+everyOther --> [<poly>; <poly>; <poly>]
+- : int list = [1; 3; 5]
+# # untrace everyOther;;
+everyOther is no longer traced.
+#
+
+*note: --> means return
+       <-- means pass into
+
+*new expression E , declaring local variables: let X = E in E
+
+# let quadruple n = let d = (double n) in d + d;;
+val quadruple : int -> int = <fun>
+
+*Ocaml has tuples like python
+# (3, "hi", true);;
+- : int * string * bool = (3, "hi", true)
+
+*th
+# let add =
+    function (x,y) -> x+y;;
+val add : int * int -> int = <fun>
+
+or (without function keyword)
+
+# let add (x,y) = x + y;;
+val add : int * int -> int = <fun>
+
+*ex of use:
+
+# let p = (3,4)
+  ;;
+val p : int * int = (3, 4)
+# add p;;
+- : int = 7
+
+*swap function
+# let swap =
+   function (x,y) -> (y,x);;
+val swap : 'a * 'b -> 'b * 'a = <fun>
+# swap (3,"all");;
+- : string * int = ("all", 3)
+
+
+*() unit
+*what I am actually doing is passing an empty tuple
+# ()
+  ;;
+- : unit = ()
+# let three() = 3;;
+val three : unit -> int = <fun>
+# three();;
+- : int = 3(34);
+
+*tuples can only be size 0 or > 1
+# (34);;
+- : int = 34
+
+*zip function
+(*
+zip ([1;2;3], ["a";"b";"c"])
+= [(1,"a"),...,]
+*)
+let rec zip (l1, l2) = 
+   match (l1,l2) with
+   ([],[]) -> []
+   | ((first1::rest1),(first2::rest2)) -> ((first1,first2)::zip (rest1,rest2))
+
+* _ ->   this is like the else	
+"_" is a wildcard for any single thing, note: tuple is a single thing
+
+(*practice problem try unzip*)
+# let rec unzip l =
+  match l with
+  [] -> ([],[])
+  | ((first,second)::rest) ->
+  let (f1,f2) = unzip rest in
+  (first::f1,second::f2);;
+val unzip : ('a * 'b) list -> 'a list * 'b list = <fun>
+# k;;
+- : (int * int) list = [(1, 4); (2, 5); (3, 6)]
+# unzip k;;
+- : int list * int list = ([1; 2; 3], [4; 5; 6])
+
+*below is just shorthand for function 
+# let square x = x*x;;
+val square : int -> int = <fun>
+# let square = (function x -> x*x);;
+val square : int -> int = <fun>
+
+(*first-class functions: 
+   functions are like any other expression
+   - can be passed to other functions
+   - can be storesd in variables/lists
+   - can be returned from function
+*)
+
+*passing functions to functions
+*because functions are first-class I can take other functions
+# let square x = x*x;;
+val square : int -> int = <fun>
+# let square = (function x -> x*x);;
+val square : int -> int = <fun>
+# ^CInterrupted.
+# let quadruple x = double(double x);;
+val quadruple : int -> int = <fun>
+# quadruple 3
+  ;;
+- : int = 12
+# let fourthPower x = square(square x);;
+val fourthPower : int -> int = <fun>
+# fourthPower 3;;
+- : int = 81
+
+*this functions calls any function twice using a tuple for a parameter 
+# let twice (f,x) = f(f x);;
+# twice ((function x -> x*x), 3);;
+- : int = 81
+
+val twice : ('a -> 'a) * 'a -> 'a = <fun>
+
+*other way of writing twice
+# let twice = function f -> (function x -> f(f x))
+  ;;
+val twice : ('a -> 'a) -> 'a -> 'a = <fun>
+
+*is left associative
+# (twice double) 3;;
+- : int = 12
+# twice double 3
+  ;;
+- : int = 12
+#
+
+*carrying, a way to write functions with multiple arguments
+
+# let twice = fun f x -> f(f x);;
+val twice : ('a -> 'a) -> 'a -> 'a = <fun>
+# let twice f x = f(f x);;
+val twice : ('a -> 'a) -> 'a -> 'a = <fun>
+# twice double 3
+  ;;
+- : int = 12
+
+*remember
+let twice = function (f,x) -> f(f x)
+
+(* twice' takes one argument f and returns a new function that takes the second argument x 
+and does the computation
+*)
+
+# let twice' = function f -> (function x -> f(f x))
+# (twice' double) 3;;
+- : int = 12
+
+(*
+syntatic sugar (shorthand):
+
+let twice' = fun f x -> f(f x)
+
+let twice' f x = f(f x)
+*)
+
+let rec incLst l = 
+   match l with
+     [] -> []
+   | h::t -> (h+1)::(incLst t)
+
+let rec exclaimLst l = 
+  match l with
+    [] -> []
+  | h::t -> (h ^ "!")::(exclaimLst t)
+
+*note: ^ means concatenate it so we get h!
+
+*the above are basically a map
+# List.map;;
+- : ('a -> 'b) -> 'a list -> 'b list = <fun>
+
+*here is how we will write map
+
+le t rec map f l =
+  match l with
+    [] -> []
+  | h::t -> (f h) :: (map f t)
+
+*ex use of map
+
+# map (function x -> x^"!") ["hi"; "there];;
+# map (function s -> (String.length s) > 3) ["hi"; "there];;
+- : bool list = [false; true]
+
+*suppose I want to increment a list of a list
+*then just map twice
+
+# map (function l -> map (function x -> x +1) l) [[1;2;3];[4;5]];;
+
+or
+
+# map ( map (function x -> x+1)) [[1;2;3];[4;5]];;
+
+*filter function: returns a list that satisfy a requirement
+# List.filter;;
+- : ('a -> bool) -> 'a list -> 'a list = <fun>
+
+
+let rec filter p l =
+ match l with
+   [] -> []
+ | h::t ->
+   let rest = filter p t in 
+   if p h then h::rest else rest 
+==================================================================================
+week 2.1
+==================================================================================
+
+high order function takes another function takes a function as 
+an argument
+
+*ex
+# List.map;;
+- : ('a -> 'b) -> 'a list -> 'b list = <fun>
+
+(*map:
+('a -> 'b) -> ('a list -> 'b list)
+*)
+
+is right associated
+
+currying is a function that takes a function that returns the argument
+to the next function
+
+this is useful because in the tuple version you need the two arguments
+but in currying you get more flexibility 
+for example in list.map
+it returns a function so you dont actually need an argument for the 
+function that is returned 
+
+ex
+
+# List.map (fun x -> x+1) [1;2;3;4];;
+- : int list = [2; 3; 4; 5]
+# List.map (fun x -> x+1);;
+- : int list -> int list = <fun>
+
+
+(* map:
+ ('a -> 'b) * ('a list -> 'b list) 
+*)
+
+one thing you notice about maps is that it is embarassingly parallel
+because the map function operates on each element independently and 
+can be run on different threads
+
+people has realized functional programming is good for large scale programming
+for easy parallel
+
+# let incBy l n =
+  List.map (function x -> x+n) l;;
+val incBy : int list -> int -> int list = <fun>
+# incBy [1;2;3] 5;;
+- : int list = [6; 7; 8]
+
+# let rec prodList l =
+  match l with
+  [] -> 1
+  | h::t -> h* (prodList t);;
+val prodList : int list -> int = <fun>
+
+if I want to do a generalized version of this you cant 
+use map or filter so you have to use a fold
+
+ex.
+# let rec (combineInts : (int -> int -> int) -> int list -> int -> int ) =
+  fun f l b ->
+  match l with
+  [] -> b
+  | h::t -> f h (combineInts f t b);;
+val combineInts : (int -> int -> int) -> int list -> int -> int = <fun>
+
+# combineInts (+) [1;2;3;4] 0;;
+- : int = 10
+
+# combineInts (-) [1;2;3;4] 0;;
+- : int = -2
+
+(1 - (2 -(3- (4 -0)))
+
+(*write length with combineInts*)
+
+# let length l = combineInts ( fun x y -> y + 1) l 0;;
+val length : int list -> int = <fun>
+
+(*more general version*)
+# let rec fold_right =
+  fun f l b ->
+  match l with
+  [] -> b
+  | h::t -> f h (fold_right f t b);;
+val fold_right : ('a -> 'b -> 'b) -> 'a list -> 'b -> 'b = <fun>
+
+'a stands for the type of the elements of the list
+'b stands for the type of the result of our list
+
+(*fold is called reduce in somethings and map and filter can
+be implement using fold, and fold is also embarassingly parallel*)
+
+(*is the list all positive elements*)
+# let allpos l =
+  fold_right (fun elem restIsPos -> (elem > 0) && restIsPos) l true;;
+val allpos : int list -> bool = <fun>
+
+(*fold is useful for list traversal*)
+(*general version of previous function analgous to List.for_all*)
+# let all p l =
+  fold_right (fun elem rest -> (p elem) && rest) l true;;
+val all : ('a -> bool) -> 'a list -> bool = <fun>
+
+(*exer: make the append '@' function without recursion and using fold_right*)
+let append l1 l2 =
+fold_right (fun elem appendedRest -> elem::AppendedRest) l1 l2
+
+
+(*make dup list so [1;2;3] = [1;1;2;2;3;3] cant use map because different sizes returned*)
+let dupList l = 
+fold_right (fun elem rest -> elem::elem::rest) l []
+
+(*you want to codeify common patterns so you can think in a higher level,
+first class functions are a good tool to raise level of abstraction*)
+
+(*python has lambda and map
+map(lambda x: x+1, [1,3,5]*)
+
+# List.fold_left (-) 0 [1;2;3;4];;
+- : int = -10
+# fold_right (-) [1;2;3;4] 0;;
+- : int = -2
+
+((((0-1)-2)-3)-4))
+
+(*implement dot product using List.left_right*)
+let dotProd l1 l2 =
+List.fold_right2 (fun e1 e2 rest -> e1*e2 + rest) l1 l2 0
+
+(*key control structures are 
+recursion and pattern matching
+data structures we see are
+lists and tuples
+
+first-class functions (kinda both)
+*)
+
+(*whats missing?
+
+user defined types
+
+privacy/protection/encapsulation
+
+*)
+
+(*OCaml lets you define your own *datatypes* similar
+in spirit to structs in c, classes in java
+
+difference: datatypes are designed for 
+--immutability
+--pattern matching
+
+a dataype defines a set of values
+
+*)
+
+# type sign = Pos | Neg | Zero;;
+type sign = Pos | Neg | Zero
+
+(*ocaml requires that the type starts with lower case letter and 
+options starts with capital case letter
+
+this is like enum
+
+*)
+
+# let signOf n =
+  match n with 0 -> Zero | _ -> if n>0 then Pos else Neg;;
+val signOf : int -> sign = <fun>
+
+# let signToInt s =
+  match s with
+  Pos -> 1
+  | Neg -> -1
+  | Zero -> 0;;
+val signToInt : sign -> int = <fun>
+(*pattern matching works for user defined data types*)
+
+# type point = Pt of float * float;;
+type point = Pt of float * float
+# pt (3.0,4.0);;
+Error: Unbound value pt
+# Pt (3.0,4.0);;
+- : point = Pt (3., 4.)
+# let negate p =
+  match p with
+  Pt (x,y) -> (-. X, - .y);;
+Error: Syntax error: operator expected.
+# let negate p =
+  match p with
+  Pt (x,y) -> Pt (-. x, -. y);;
+val negate : point -> point = <fun>
+
+(*notes:
+-. is negation for floats
+*)
+
+# negate (Pt (3.1,4.1));;
+- : point = Pt (-3.1, -4.1)
+# negate (3.1,4.1);;
+Error: This expression has type 'a * 'b
+       but an expression was expected of type point
+
+(*Pt is not a pair of floats, it is user defined*)
+
+=============================================================================
+week 3.1
+==============================================================================
+
+(NOTE: internal types like Curcle and Rect need to start with capital letter)
+# type shape = Circle of float | Rect of float * float;;
+type shape = Circle of float | Rect of float * float
+
+# let area s =
+  match s with
+  Circle r -> 3.14 *. r *. r
+  | Rect (x,y) -> x *. y;;
+val area : shape -> float = <fun>
+
+# area (Circle 3.0);;
+- : float = 28.259999999999998
+# area (Rect (3.0,3.0));;
+- : float = 9.
+
+*Null in ocaml
+* no real null, is user defined
+
+# type nulladlbInt = Null | Nonnull of int;;
+type nulladlbInt = Null | Nonnull of int
+# let nullableIntTo int n =
+  match n with
+  Null -> 0
+  | Nonnull i -> i;;
+val nullableIntTo : 'a -> nulladlbInt -> int = <fun>
+# let incNullableInt n =
+  match n with
+  Null -> Null
+  | Nonnull i -> Nonnull (i+1);;
+# incNullableInt (Nonnull 34);;
+- : nulladlbInt = Nonnull 35
+
+# let updateNullableInt f n =
+  match n with
+  Null -> Null
+  | Nonnull i -> Nonnull (f i);;
+val updateNullableInt : (int -> int) -> nulladlbInt -> nulladlbInt = <fun>
+# updateNullableInt (fun x -> x + 1) (Nonnull 34);;
+- : nulladlbInt = Nonnull 35
+# updateNullableInt ( fun x -> x*x) (Nonnull 34);;
+- : nulladlbInt = Nonnull 1156	
+
+let rec nth (n:int) (l : 'a list) : 'a option =
+  match n with
+    0 ->
+    (match l with
+       [] -> None
+     | h::t -> Some h)
+  | _ when n < 0 -> None
+  | _ ->
+     (match l with
+        [] -> None
+      | h::t -> nth (n-1) t
+     )
+
+
+
+# nth 3 [5;4;22;25;55;1];;
+- : int option = Some 25
+# nth 7 [5;4;22;25;1];;
+- : int option = None
+
+(*defining own list*)
+
+type intlist = Empty | Node of int * intlist
+
+
+(*[1;2;3'
+ Node(1, Node(2, Node(3,Empty)))*)
+
+let rec toIntList l =
+  match l with
+    [] -> Empty
+  | h::t -> Node (h , toIntList t)
+
+let rec fromIntList l =
+  match l with
+    Empty -> []
+  | Node(h,t) -> h :: (fromIntList t)
+
+# Node("hi" , Empty);;
+- : string mylist = Node ("hi", Empty)
+#
+(*functions from class*)
+let rec nth (n:int) (l : 'a list) : 'a option =
+  match n with
+    0 ->
+    (match l with
+       [] -> None
+     | h::t -> Some h)
+  | _ when n < 0 -> None
+  | _ ->
+     (match l with
+        [] -> None
+      | h::t -> nth (n-1) t
+     )
+
+let rec nth2 n l =
+  match l with
+    []-> None
+   |h::t ->
+     if n=0 then Some h
+     else if n < 0 then None
+     else nth2 (n-1) t
+
+let rec nth3 n l =
+  match (n,l) with
+    (_,[]) -> None
+  | (_,_) when n < 0 -> None
+  | (0, h::t) -> Some h
+  | (_,h::t) -> nth3 (n-1) t
+
+type intlist = Empty | Node of int * intlist
+
+                          
+(*[1;2;3];;
+ Node(1, Node(2, Node(3,Empty)))*)
+
+let rec toIntList l =
+  match l with
+    [] -> Empty
+  | h::t -> Node (h , toIntList t)
+
+let rec fromIntList l =
+  match l with
+    Empty -> []
+  | Node(h,t) -> h :: (fromIntList t)
+
+type 'a mylist = Empty | Node of 'a * 'a mylist
+                               
+let rec mymap f l =
+  match l with
+    Empty -> Empty
+  | Node(h,t) -> Node(f h, mymap f t)
+
+type 'a mytree = Leaf | InternalNode of 'a * 'a mytree * 'a mytree
+
+let rec size t =
+  match t with
+    Leaf -> 0
+  | InternalNode(_, l, r) ->
+     1 + (size l) + (size r) 
+
+let rec preorder ( t: 'a mytree) : 'a list =
+  match t with
+    Leaf -> []
+  | InternalNode( d, l, r) ->
+     d :: (preorder l) @ (preorder r)
+
+let rec insert x t =
+  match t with
+    Leaf -> InternalNode( x, Leaf, Leaf)
+  | InternalNode(h,l,r)->
+     if x < h then
+       InternalNode(h, insert x l, r)
+     else
+       InternalNode(h, l, insert x r)
+===================================================================================
+week 3.2
+====================================================================================
+
+(*Scoping*)
+-----------
+
+key question: which variable declarations does a particular 
+
+
+the language maintains during execution an
+*environment*
+mapping from variable names to their valies
+
+# (* the environment is empty []*)
+  ;;
+# let x = 3;;
+val x : int = 3
+# (*the environment is now binding x to 3 [("x",3)] *);;
+# let double n = n* 2;;
+val double : int -> int = <fun>
+# (*environment is [("double", <fun>) *);;
+# (*the environment is going to be updated to have the value for n and the value dissapears when n dissapears*);;
+# double 34;;
+(* ("n",34) gets put into the environment*)
+execute n*2 -> 68
+- : int = 68
+(* environment is now back to # [("double", <fun>) *);;
+
+# let x = 3;;
+val x : int = 3
+# let three() = x;;
+val three : unit -> int = <fun>
+# three();;
+- : int = 3
+
+
+(*local variable declarations*)
+(* env is []*)
+# let y = 3 in 
+  (*env is now [("y",3)]*)
+  let z = y*2 in
+     (*env is now [("y",3),("z",6)]*)
+  y+z;;
+- : int = 9
+(* env is [] again*)
+
+block structuring is scopes nested in another scope and inner scopes
+can look at the outside still
+i.e.
+scoping: a variable reference refers to the declaration of that variable that is nearest 
+in the enclosing  scope *textually*
+
+# let x = 34 in
+        let y = x+1 in
+                let x = x + 32 in
+                        x+y;;
+- : int = 101
+
+*static* or *lexical* scoping (above definition)
+static means at compile time
+dynamic means at run time
+
+static scoping: can statically (at compile time)
+determine the variable declaration associated with each variable usage
+
+
+the alternative ( rarely used dynamica scoping: 
+a variable reference refers to the declaraion of that 
+variable that is in the current scope at run time
+- only used by some variations of Lisp
+
+(*the add45 always referes to the x it saw the first time in static scoping*)
+(*env is [] *)
+ let x = 45;;
+val x : int = 45
+(*env is now [("x",45)]*)
+# let add45 = fun y -> y+x;;
+val add45 : int -> int = <fun>
+(*env is now [("x",45) ("add45", <fun>)]*)
+# add45 3;;
+- : int = 48
+# let x = 12;;
+val x : int = 12
+(*env is now [("x",12) ("add45", <fun>)]*)
+(*this shows that there must be like a pointer kept to previous environment*)
+so really 
+(*env is now [("x",12) ("add45", (<fun>,[("x",45)]))]*)
+# add45 3;;
+- : int = 48
+(*static scoping can go out of scope but can always be refered back by add45*)
+(*in dynamic scope it will look at x = 12 so add45 3 will now return 15*)
+
+what this means that environment needs to keep track of variables
+
+upshot: to make static scoping work, every function has to keep its static (lexical) enviroment with that
+environment is used when the function is called
+
+# let add = (function x -> function y -> x + y);;
+val add : int -> int -> int = <fun>
+# let add45 = add 45;;
+val add45 : int -> int = <fun>
+# let x = 12;;
+val x : int = 12
+# add45 3;;
+- : int = 48
+
+in python
+---------
+>>> x = 2
+>>> x
+2
+>>> def add2(y):
+...     return y + x;
+...
+>>> add2(5);
+7
+>>> x = 3
+>>> add2(5);2wesrgh
+8
+>>> def add(x):
+...     return lambda y: x+y
+...
+>>> add2 = add(2)
+>>> add2(34)
+36
+>>> x = 17
+>>> add2(34)
+36
+
+type system
+-------------------------------------------------------
+
+what is a type?
+
+a set of values along with the allowed operation of those values
+
+type int is the set of 64-bit intergers
+op: + - / *, ...
+
+int list : [1;2], [5;23;17]
+operation: @, ::, access head and tail
+
+int * bool: (1, false)
+operations: acess first/second (pattern matching)
+
+What is the point of types?
+cosntrains what you can do to data
+each value can be manipulated using the operations of its type
+
+enforce abstraction boundaries
+types are abstractions
+-including user define
+basic form of programming
+
+two main types of type checking
+dynamic and static
+
+static type checking:
+every program expression, statement, function, is 
+given a type at compile time
+if something cant be given a type, then you get a compile error
+
+examples: c/c++ ocaml, java
+
+dynamic type checking:
+-during execution, before executing any primitive operation,
+the types are argument values are checked. if they are the wrong type. an
+exception is raised
+
+ex: python, javascript, ruby, lisp
+
+1 + "hi"
+
+in ocaml it is checked in compile time
+in python it runs it and check at run time
+
+# let inc x = x+1;;
+val inc : int -> int = <fun>
+# let inc x = if x < 0 then x + 1 else 1 + "hi";;
+Error: This expression has type string but an expression was expected of type
+         int
+
+in python example of dynamic type checking:
+
+>>> def times3(x):
+...     return x*3
+>>> times3(3)
+9
+>>> times3('3')
+'333'
+
+
+main advantage of static type checking:
+-early detection of errors( before program runs)
+-guarantees for all possible execution of function
+
+disadvantage
+-dynamic typed languages are more flexible
+-statically type language can reject "good" programs
+--ex. in ocaml all the elements in a list need to be same type
+--ex. in python we can have list of random shit
+
+in ocaml you can defined own types to do lists of different things like
+
+# type intORFloat = I of int | F of float;;
+type intORFloat = I of int | F of float
+# [I 1; F 2.2; F 3.3]
+  ;;
+- : intORF
+
+===========================================================================================
+week 4.1
+==========================================================================================
+
+types
+---------
+
+goal: ensure that operations are only invoked with arguments of the right types 
+-basic sanity check 
+-can also used to enforce requirements on user defined type (data structures)
+
+static vs dynamic type checking:
+
+*static type checking* means that you try to ensure the above goal at compile time
+-give a type to each program expression 
+-signal a compile time error if not possible
+
+*dynamic typechecking* means that you check that an operation has arguments of the right type just before
+you execute the operation
+-if ok; execute the operation
+-if not ok; throw an execption 
+
+a second dimension to evaluate a type system: 
+strongly typed vs weekly typed
+
+*strongly typed* means that the type system achieves the above goal 100% of the time
+
+*weakly typed* means that there are certain type errors that the language does not protect
+against 
+-its possible to treat a value one type accidentally as if it has another type
+-implementation dependent, what if you treat strings like ints, then code changes when 
+compiler changes
+-implementation-dependent behavior 
+-c/c++'
+
+ex.
+
+#include<stdio.h>
+
+int main()
+{
+
+int i = 48;
+chas s[5] = "hello";
+
+i = i * 2 + 5;
+printf("%c\n", s[5]);
+
+key issue: memory saftey 
+-memory errors in c
+-out of bvounds accesses
+"buffer overun"
+the leading cause of security exploits 
+"dangling pointers"
+-unitialized pointers
+-how do strongly typed languages avoid these errors?
+-pointers are hidden
+-run--time bound checks on every array access
+-garbage collection at run time to free memory thats no longer used
+-you cant manually free memory
+-pointers must be initialized before use
+
+summarize:
+
+static/strong: ocaml, java, c#
+
+static/weak: c/c++
+
+dynamic/strong: javascript, pytjhon, lisp
+
+dynamic/weak: ??? [no need to be weak at run time]
+
+(*exceptions *)
+(*why do they exist and what are they good for?*)
+
+(*an association list is a list of pairs
+[(1,"hi"); (2,"there")]
+*)
+
+let rec lookup k l =
+  match l with
+    [] -> None
+   |(key,v)::t ->
+     if key=k then Some v else lookup k t
+let l1 = [(1,"hi");(3,"bi");(2,"yo")]
+
+let rec lookup k l =
+  match l with
+    [] -> None
+   |(key,v)::t ->
+     if key=k then Some v else lookup k t
+
+let lookupAndExclaim k t =
+  let vopt = lookup k t in
+  match vopt with
+    None -> None
+  | Some s -> Some (s^"!")
+
+let rec lookupAll ks l =
+  match ks with
+    [] -> Some []
+  | k::rest ->
+     let vopt = lookup k l in match vopt with
+                                None -> None
+                               |Some v ->
+                                 let vsopt = lookupAll rest l in
+                                 match vsopt with
+                                   None -> None
+                                 |Some vs -> Some (v::vs)
+(*exceptions:
+-clear indication of an error
+-clean seperation of error handling code from
+ordinary functionality
+-allows callers to easily pass through the error
+if they cant handle it
+ *)
+exception NotFound of string
+exception AnotherOne
+
+let rec lookupE k l =
+  match l with
+    [] -> raise (NotFound "key not in list")
+   |(key,v)::t ->
+     if key=k then v else lookupE k t
+
+(*implicitly propagates the exception*)
+let lookupAndExclaimE k l =
+      (lookupE k l) ^ "!"
+(*in this version, I want to return "error" if theres an error*)
+let lookupAndExclaimTry k l =
+  try
+    (lookupE k l) ^ "!"
+  with
+    NotFound s-> "error:" ^ s
+   |AnotherOne -> "another one"
+   | _ -> "unknown bad thing"
+
+let rec lookupAllE ks l =
+   List.map (fun k -> lookupE k l) ks
+
+let lookupAllTry ks l =
+  try
+    Some (List.map (fun k -> lookupE k l ) ks)
+  with
+    NotFound s -> None
+
+let lookupAllTry2 ks l =
+  List.map
+    (fun k -> try Some (lookupE k l) with
+                NotFound s -> None)
+   ks
+
+============================================================================================
+week 4.2
+============================================================================================
+
+(*parametric polymorphism =*)
+(*also called generics*)
+
+(*ocaml*)
+cannot do if true then 1 else 1.1
+cannot do [1.1;1];;
+
+
+let rec lengthbool (l : bool list) : int =
+  match l with
+    [] -> 0
+  | _::t -> 1 + (lengthbool t)
+
+let rec lengthint (l : int list) : int =
+ match l with
+    [] -> 0
+  | _::t -> 1 + (lengthint t)
+
+(*instead of doing the same functions I can us 'a list*)
+
+let rec length (l : 'a list) : int =
+   match l with
+    [] -> 0
+  | _::t -> 1 + (length t)
+
+(*
+'a is a *type variable*
+'a is implicitly instantiated on each call to length
+length (*int*) [1;2;3]
+length(*bool*) [true;false]
+
+in C we dont have type checking but we can kind of do this using void*
+ *)
+
+let rec (sumlist : 'a list -> int) =
+  fun l -> match l with
+    [] -> 0
+  | h::t -> h + sumlist t
+
+(*
+ocaml that does not support overloadinf so you cannot use + for floats
+you need to use +.
+partially due to type inferences
+*)
+
+# let rotate (x,y,z) = (z,x,y);;
+val rotate : 'a * 'b * 'c -> 'c * 'a * 'b = <fun>
+
+let double x = x*2
+
+(*val double : int -> int = <fun>*)
+(*How to typecheck this call?
+#double 45;;
+
+-look up the type double : int -> int
+-compute the type 45 : int
+-check the actual and formal parameters types are equal
+ *)
+
+
+let pos x = x > 0
+                  (* val pos : int -> bool = <fun> *)
+          (*How to typecheck this call?
+#pos 45;;
+-look up the type pos : int -> bool
+-compute the type 45 : int
+-check that the actual and formal parameter types are equal
+-the type of the whole thing is the result type of the function : bool
+
+           *)
+
+(*
+How do we type check this call [true;false;true];;
+-look up the type length : 'a list -> int
+-compute the type : bool list
+-check that we can find an instantiation of 'a with parameter types be equal 'a = bool
+-the type of the whole thing is the result type of the function : bool
+ *)
+
+
+(*
+How do we type check this call rotate (1, "hi", 3.14);
+-look up the type rotate : ('a * 'b * 'c -> 'c * 'a * 'b)
+-compute the type (1, "hi", 3.14) : int * string * float
+-check that we can find an instantiation of 'a, 'b, and 'c
+ with types that makes the actual and formal parameter types be
+equal :
+'a = int
+'b = string
+'c = float
+-the type of the whole thing is the result type of the function :
+float * int * string
+*)
+
+(*
+ key idea: parametric polymorphism
+-one function
+-can pass many different types of arguments
+*)a
+
+(* contrast with static overloading:
+multiple functions one name
+
+list adding floats and ints are overloaded in C
+but not in ocaml
+
+# (+);;
+- : int -> int -> int = <fun>
+# (+.);;
+- : float -> float -> float = <fun>
+
+(>) and (=) is treated as polymorphically in ocaml
+
+*)
+
+mini-ocaml interpreter
+==========================
+
+step 1 given: some string of characters parse the strings into tokens
+
+ex. 
+let f = function x -> x + 1 in f 3;
+
+tokens are
+let
+f
+=
+function 
+x
+->
+x
++
+1
+in
+f
+3
+
+if grammatically incorrect, then reject (parse error)
+-otherwise produce a data structured called an abstract syntax (AST)
+-unambiguosly represent the code
+
+[step 2 in statically typed language 
+Typecheck the program
+if the error then reject ( type error)
+otherwise move to the next step
+
+mocaml does not have static typechecking
+Instead we'll do dynamic typechecking
+
+evalExpr
+let rec evalExpr (e:moexpr) (env:moenv) : movalue =
+match e with
+IntConst(i) -> IntVal(i)
+|BoolConst(b) -> BoolVal(b)
+| If (guard, thn, els) ->
+  (match evalExpr guard env with
+   BoolVal true -> evalExpr thn env
+   | BoolVal false -> evalExpr els env
+   | _ -> raise DynamicTypeError "whatever')
+
+step 3: execute the program
+  recursive traversal of the AST
+  compositional:
+     -compute the values of subexpressions
+     -figure out to combine them to produce the 
+         overall value
+  Need to handle environment properly to account for variable scoping
+
+step 4: print ocaml representation of result
+
+============================================================================================
+week 5.1
+============================================================================================
+
+midterm
+
+wednesday
+closed book, closed notes
+
+mixed of small programming problems with short answer
+multiple choice questions about concepts
+
+functional programming:
+recursion
+pattern matching
+first class functions
+datatypes
+exceptions
+
+concept:
+static vs dynamic scoping
+static cs dynamic typechecking
+strong vs weak typechecking
+parametric polymorphism vs static overloading
+
+parametric poly is when you have one piece of code, typically a funciton, and you can use it
+with many different type of arguments, this is really about code reuse,
+
+ex. List.map 
+
+parametric poly
+one function
+can pass the function many different types of args
+
+static overloading:
+many functions
+they have the same name, if different arguments then different function
+like additions of strings or strings or ints in ocaml
+giving pluses the same name
+
+python does dynamic overloading with the addition operator
+
+equal and other comparison operators are overloaded
+
+static scoping and environments
+
+
+# let double x = x * 2;;
+val double : int -> int = <fun>
+# x;;
+Error: Unbound value x
+# (* [(double, (function x - > x*2,[]))]*)
+  double 34;;
+- : int = 68
+# (* double 34:
+* -grab the function's environment: []
+* -add a binding from formal to actual parameter:
+*    [(x,24)]
+* - execute the function body x * 2 in this environment
+* *)
+  ;;
+
+let z = double 34;;
+(*[(double, (function x -> x *2,[])), (z,68))]
+
+ex 2
+
+# let x = 4;;
+val x : int = 4
+# let addX y = y + x;;
+val addX : int -> int = <fun>
+# (*[(x,4),(addx,(fun y -> y + x, [(x,4)]))]*)
+  let x = 15;;
+val x : int = 15
+# (* [(x,15),(addX, (fun y -> y + x, [(x,4)]))] *)
+  addX x;;
+- : int = 19
+
+(*grabs addX's environment: [(x,4)]
+add a mapping from formal to actual 
+[(y,15),(x,4)]
+evaluate the function body: y+x
+
+dynamic scoping is
+basically imaginaning functions dont keep track of previous enviros
+
+let x = "hello";;
+# (* [(x,"hello"), (addX, (fun y -> y + x, [(x,4)]))]*)
+
+statically type checking there will be a compiled time error
+before you run it while in dynamically typed checking, checks in
+run time
+
+with parametric polymorphism ocaml gives a type to a function
+and only checks it once
+
+paramtric polymorphism gives statically type checking langugages to instantiate
+different functions with different types
+
+map does not have a type does no parametric polymorphism
+
+in dynamic typechecking does not have types and you could kind of do whatever you
+want and gives you some benefits of parametric polymorphism 
+
+first class functions
+-basically functiosn can be treated as functions
+
+a dynamically typechecking is always more flexible than statically type checking
+
+strong type checking:
+the type checker enforces types 100 percent of the time
+-it will never allow a value of one type to be treated as if its a value of another type
+
+weak typechecking:
+the type checker sometime allows a value of one type to be treated as a value of
+another type
+reason: the real issues is that when ensuring safety run time checks like the size of arrays
+and array access
+-garbage collection
+-nullpointer checks before every pointer dereference
+
+you can do casting in strong type checking, but it needs to check at
+run time to see if the thing you are casting is really what it is
+
+============================================================================================
+week 6.1
+============================================================================================
+
+(*large scale program structures*)
+(*ocaml does this with modules
+key idea: seperation of interface from implementation
+
+want to hide things and enforce some properties I want
+
+
+in Env.ml
+
+the module type ENV = sig
+...
+
+module Env : ENV 
+
+now we cant assume env is a list
+*)
+
+(*tail recursion *)
+let rec fact n = 
+match n with 
+0 -> 1 
+| _ -> n * (fact(n-1))
+
+(*
+time complexity = O(n)
+Space _          = O(n)
+*)
+(*
+[(n,3)]   n * (fact 2 ) --> 6
+[(n,2)]   n * (fact 1 ) --> 2
+[(n,1)]   n * (fact 0 ) --> 1
+[(n,0)]   1
+
+int fact (int n)
+{
+int res = 1;
+for (int i = 1; i<= n; i++)
+   res*=1;
+return res
+}
+
+time complexity = O(n)
+Space _          = O(1)
+
+
+*)
+
+(*soln to space complexity in ocaml*)
+
+let rec factIter n acc =
+match n with
+0 -> acc
+| _ -> factIter (n-1) (acc*n)
+
+(* factIter 3 1
+[(n,3); (acc,1)] factIter 2 3
+[(n,2); (acc,2)] factIter 1 6
+[(n,1); (acc,6)] factIter 0 6
+[(n,0); (acc,6)] 6
+
+A *tail call* is a function call that is the last operation
+done dynamically in a function body
+
+a function is tail recursive is all recursive if all recursive calls are 
+tail recurisve 
+
+ocaml guarantees that tail-recurisve functions will use constant stack space 
+can check if it is using constant stack space by checking if it is an infinite loop
+on ocaml interpreter
+
+let rec sumlist l = 
+match l with
+[] -> 0
+| h::t -> h + (sumlist t)
+
+let rec sumlistTailRec l acc = 
+match l with 
+[] -> 0
+| h::t -> sumlistTailRec (t) (acc + h)
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Java
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+import java.util.*;
+interface Set {
+    boolean contains (String s);
+    void addElem(String s);
+}
+
+class Client {
+    void myClient(Set s) {
+       if (s.contains("hi"))
+        s.addElem("there);
+           }
+}
+
+/*static type checking guarantees that the set is only 
+used according to its interface*/
+
+/*class are implementations*/
+
+class ListSet implements Set {
+   private List<String> l = new LinkedList<String>();
+   public boolean contains() {
+    return this.l.contains(s);
+    }
+    
+    public void addElem(String s) {
+    if (!this.contains(s))
+       l.add(s);
+     } 
+    }
+}
+
+}
+
+/* type checking of the implementating ensures that it provides code for each
+of the set's operations
+
+/* other implementations:
+class ArraySet implements sets {...}
+
+*/
+
+/*
+we have paramateric polymorphism
+interface List<E> {...}
+E is a type variable (like 'a in ocaml)
+Clients explicitly instantiate E 
+List<String> ls = ...;
+List<Car> cs = ...;
+
+
+*/
+
+/*
+we have a new kind of polymorphism:
+subtype polymorphis, 
+*/
+
+interdace RemovableSet extends Set {
+void remove(String s);
+}
+
+/*
+subtype polymorphism: It's safe to pass
+an object of type S wherever an object of type 
+T is expected, where S is a subtype of T */
+
+
+*/
+============================================================================================
+week 6.2 
+============================================================================================
+
+class Main {
+    public static void main(String[] args) {
+        Client c = new Client();
+        Set s = new ListSet();
+        c.myClient(s);
+        Set s2 = ListSet();
+        s2.addElem("hi");
+        c.myClient(s2);
+        System.out.println(s);
+        System.out.println(s2);
+       }
+
+    
+/*use this
+to disambiguate
+to refer to the set object when passing it into functions
+
+parametric polymorphism when you are not actually not touching the data at all
+
+
+*/
+old version of java paramateric polymorphism
+
+interface List /* <E> */ 
+//boolean contains(E,e);
+boolean contains(Object o);
+//boolean add(E e);
+void add(Object o);
+//E get(int i);
+Objecct get(int i);
+}
+
+//disadvantage of using Object instead of 
+//parametric polymorphism:
+//- cant enforce that all elements of the list have the same types
+
+class ListExample {
+  public static void main(String[] args) {
+    MyList l1 = new MyListImpl();
+    li.add("hi");
+    li.add("bye");
+    String s = (string) li.get(0);
+}
+
+/*have to ast li.get(0) to a string by telling compiler explicitly*/
+
+class Broken<E> {
+boolean m(E e) {
+    return e.contains("hi");
+     }
+}
+
+/*
+templates in c++ you only get checking for certain instantiation so you dont know
+if it works for all possible instantiation
+*/
+
+//subtyping vs inheritance
+
+interface Shape {
+float area();
+}
+
+class Rectangle {
+private float length,width;
+publi float area() {return length * width;}
+ }
+
+class Square {
+  private float side;
+  public float area() {return side * side; }
+}
+
+
+//I dont want Square to inherit code from rectangle
+//But I do want to be a ble tiop pass square were rectangles are expected
+/*subtype polymorphis,*/
+
+interface RemovableSet extends Set {
+void remove(String s);
+}
+
+class RListSet extends ListSet
+   implements RemovableSet {
+  public void remove (String s) {
+    this.l.remove(s);
+ }
+}
+
+}
+
+/*you can only inherit code from at one most class*/
+
+============================================================================================
+week 7.1
+============================================================================================
+
+key concepts in object oriented programming languages:
+
+subtyping: about inteference compatibility 
+-a subtype of polymorphism
+
+inheritance: about code reuse for implementations
+
+today: dynamic dispatch
+
+*/
+
+class C {
+
+void m() { System.out.println("C.m"); }
+void n() {m(); //this.m();}
+}
+
+//D in inherits code from C 
+class D extends C {
+ 
+  //method overriding
+//key: dynamic dispatch, not static overloading
+ void m() {System.out.println("D.m"); }
+}
+
+
+class Overload
+{
+
+void m(String s) {System.out.println(s);}
+void m(int i) {System.out.println(i);
+void m(int i) {System.out.println(i);
+   }
+
+}
+
+class Overload2 extends Overload{
+  void m(string s) {System.out.println("D.m(s)"); }
+}
+
+class OMain {
+public static void main(String[] args) {
+ Overload o = new Overload();
+o.m("hello");
+o.m(34);
+Object o2 = "hello";
+o.m(o2); //this will invoke the object one since o2 is an object
+         //static overloaded on the types 
+         //java only does dynamic dispatch on the object not the argument types)
+          //we can cast o2 to string so it will be disambiguated
+
+Overload o2 = new OVerload2();
+o2.m(s); //two phases
+         //compile time: determine type signature of m: m(String)
+         //run time: dynamic dispatch within the methods of that type signature
+         //so runs overload2's m()
+
+o2.m(os);
+   }
+}
+
+class Main {
+public static void main(String{} args) {
+   D d = new D();
+   d.m();  //it will run D's m()
+
+  C c = new D();
+  c.m(); // will run d's m() 
+//every method is run with dynamic dispatch, so when c.m() is called it will
+//look at D's first so it will still run d.m();
+//in java every method is virtual so every method call is dynamically dispatched:
+//-look up the method in the class of the recieer 
+//-object at run time
+//- if it's not there, look in the superclass
+
+
+void callsM(C c)
+{
+c.m();	
+}
+
+}  
+
+ 
+}
+
+super.m(); //means goes to immediate superclass and run the m() method
+
+
+}
+
+//dynamic dispatch makes everything in java virtual
+
+/* OO Object oriented style: smart objects that know how to do certain things
+Object interact by asking one another to do things*/
+
+//simple example: chess game
+
+interface Piece {
+
+boolean isLegalMove(in x, int y);
+
+}
+
+class Rook implements Piece {
+
+}
+
+class Pawn implements Piece
+{
+
+}
+
+class Board {
+void move (Piece p, int x, int y) 
+{
+    /*
+   if (p is a rook) {
+   ...
+    }else if (p is a pawn) //this not object oriented since objects should know what to do 
+   ....
+     }
+*/
+
+
+}
+
+/*
+chess in OCaaml
+
+type piece = Pawn of ... | Rook of ... | ..
+
+let isLegalMove p x y = 
+match p with
+...
+
+
+pattern matching in OCaml <-> dynamic dispatch in Java
+*/
+
+/*java memory works the same way as they do in Ocaml*/
+/*if I do let l = [1;2;3;];;
+l is actually a pointer to somewhere on the heap*/
+
+import java.util.*
+
+class Memory
+{
+   public void addHi (List<String> l0 ) {
+   l0.add("hi");
+} 
+   public void main (String[] args)
+{
+   List<string> l = new LinkedList<string>();
+   l.add("hello");
+   List<String> l2 = l; //copies the pointer l //so l2 is an alias
+   l2.remove("hello");
+   System.out.println(l.size());
+   //instead I can do 
+  /*
+   List<String> l2 = new LinkedList<String>(l);
+*/
+   
+System.out.printn(l.size));
+new Memory().addHi(l);
+System.out.printn(l.size));
+
+/*
+key points: 
+variables never hold objects.
+they hold object references
+(pointers to objects).
+assignment and parameter passing copies the pointer, not the object
+*/
+
+}
+}
+
+/*call by value parameter passing:
+evaluate the actual paramter to a value and 
+you copy the value to a formal parameter
+
+this happens in hava, but its confusing
+because the balue are always object references (pointers), never objects.
+
+key property of call-by-value:
+    the value of the actual paramter 
+       be changed by the call 
+*/
+
+class parameterPassing
+{
+   void plus(int a, int b)
+{
+  a = a+b;
+}
+
+class Integer {
+
+int i ;
+Integer(int i) {this.i = i};
+public int Setvalue(){return i;}
+public String toString()
+{
+import java.util.*  return "" + this.i;
+}
+
+}
+
+void plus(Integera, Integer b)
+{
+  a = new Integer(a+b);
+}
+
+void plus1(Integer a, Integer b)
+{
+a.setvalue(a.value() + b.value());
+}
+
+public static void main(String[] args)
+{
+int x = 3;
+int y = 4;
+new ParamterPAssing().plus(x,y);
+System.out.prinln(x); //this will print 3
+
+Integer x1 = new Integer(3);
+Integer y1 = new Integer(4);
+new ParamterPAssing().plus(x1,y1);
+System.out.prinln(x1); //this will print 3 still because we only create a copy of the pointer and
+                       //then we just change the pointer a not for x
+                       //call plus1 then we get 7 
+
+}
+}
+============================================================================================
+week 7.2
+============================================================================================
+
+primitives vs objects
+
+variables are never holding objects 
+variables of objects are holding a pointer to the object
+
+
+
+class Primitives {
+  public statuc void main(String[] args) {
+    List<Integer> l = new LinkedList<Integer>();  
+    l.add(new Integer(3)); //explicit
+    l.add(4); //implicitly autoboxed
+
+    int fst = l.get(0); //java implicitly gets the value of the Integer for you
+    int snd = l.get(1).intValue(); //or do it explicitly
+
+System.outprintln(3 == l.get(0).intValue()); //true
+System,out.println(3 == l.get(0)); //false
+System,out.println(new Integer(3)).equals(l.get(0))); //true   
+ }
+}
+
+
+class Node<E> {
+  E elem;
+  Node<E> next;
+}
+you can only instantiate with object types on list because otherwise java
+doesnt know whether it is an object, so use Integer instead of int
+
+class Integer {
+  private int i;
+  ....//getter and setter functions
+}
+
+/*first version in java to compare and sort
+
+class BackwardsCompare implements Comparator<String> {
+
+  public int compare(String s1, String s2) {
+     return s1.compareTo(s2);
+  }
+
+}
+
+class Sort {
+
+  public static void main(String[] args)
+  {
+        List<String> l = Arrays.aslist(args);
+        Collections.sort(l, new BackwardsCompare());
+         for (String s: l)
+          System.out.println(s);
+  }
+
+}
+
+*/
+
+/*second version: anonymoous class as first class functions
+
+class Sort2 {
+
+  public static void main(String[] args)
+  {
+        List<String> l = Arrays.aslist(args);
+        Collections.sort(l, 
+                            new Comparator<String>() { 
+                             public int compare(String s1, String s2)
+                                {return s2.compareTo(s1);}
+                             });
+         for (String s: l)
+          System.out.println(s);
+  }
+
+}
+
+*/
+
+/* 3rd version: using "lambda" like python
+    
+class Sort3 {
+
+  public static void main(String[] args)
+  {
+        List<String> l = Arrays.aslist(args);
+        Collections.sort(l, 
+                            (String s1, String s2) -> s2.compareTo(S1) 
+                            );
+         for (String s: l)
+          System.out.println(s);
+  }
+
+}
+
+*/
+
+/*
+java.util.stream
+
+you could only do aggregate functions on streams
+
+int sum = widgets.stream().filter(w -> w.getColor() == RED)
+                 .mapToInt(w -> w.getWeight()).sum();
+
+to preserve correct behavior, these behavioral paramters must be:
+
+-non intefering(do not modify stream sorurce)
+-stateless (cannot depend on any state that might change during execution )
+
+
+
+*/
+
+/* sum the elements of an array
+
+public class SumStream{
+
+  public static void main(String[] args){
+       int size = Integer.parseInt(args[0]);
+       int [] a = new int[size];
+
+        for (int i = 0; i> size; i++)
+           {
+              a[i] = i;
+           }
+
+       int sum = Arrays.stream(a)
+                       .parallel()
+                       .reduce(0, 
+                               (i1,i2) -> i1+i2)
+                                );
+                 System.out.println(sum);
+   }
+
+}
+
+//on terminal run java sumStream <number> // summs the number from 0 to <number>
+
+*/
+
+/*
+
+class SortedStream {
+
+   public static void main(String[] args)
+   {
+      int size = Integer.parseInt(args[0]);
+      double[] a = new double[size];
+      for (int i = 0; i < size; i++)
+       {
+            a[i] = Math.random() * size;
+       }
+       double[] out = Arrays.stream(a).parallel().sorted().toArray();
+       for (int i = 0; i < 10; i++)
+           Sytem.out.println(out[i]);
+   }
+
+}
+
+//javac compiles in terminal
+*/
+============================================================================================
+week 8.1
+============================================================================================
+
+can sort in pipelining model because all data must come through to sort 
+
+from java api about streams:
+
+Intermediate operations are further divided into stateless and stateful operations. Stateless operations, such as filter and map, retain no state from previously seen element when processing a new element -- each element can be processed independently of operations on other elements. Stateful operations, such as distinct and sorted, may incorporate state from previously seen elements when processing new elements.
+
+Stateful operations may need to process the entire input before producing a result. 
+For example, one cannot produce any results from sorting a stream until one has seen all
+ elements of the stream. As a result, under parallel computation, some pipelines containing 
+
+stateful intermediate operations may require multiple passes on the data or may need to 
+buffer significant data. Pipelines containing exclusively stateless intermediate operations
+ can be processed in a single pass, whether sequential or parallel, with minimal data
+ buffering.
+
+forked join parallelism
+-------------------------------
+
+parallelism:
+
+use extra resources to solve a problem faster
+
+concurrency: 
+correctly and efficiently managed access to shared resources
+
+threads have own call stacks with own instruction pointer, but share heap		
+
+key variant must me maintained so no data races/ race conditions
+
+want to sum array
+
+divide and conquer forking to sum it up
+
+use java forkjoin framework
+
+java.util.concurrent
+
+Class ForkJoinTask<V>
+
+/****code****/
+
+imoort java.util.concurrent.*;
+
+class SumTask extends RecursiveTask<Long> {
+
+	/*
+		inherits two operations
+		void fork() and long join()
+
+		void fork()
+			asynchrously execute this.compute()
+
+		long join()
+			wait for this.compute() to finish and return its result
+
+	*/
+
+	private int[] elems;
+	private int low, high;
+	private static final int SEQUENTIAL_CUTOFF = 10000;
+	SumTask(int[] arr, int low, int high) {
+		this.low = low;
+		this.high = high;
+		this.elem = arr;
+	}
+
+	protected long compute() {
+		if (high - low <= SEQUENTIAL_CUTOFF)
+		{
+			res = 0;
+			// sum sequentially
+			for (int i = 0; i < high; i++)
+				res += elems[i];
+		}
+		else
+		{
+			//create new sum tasks
+			int mid = (high + low)/2;
+			SumTask left = new SumTask(elems, low, mid);
+			SumTask right = new SumTask(elems, mid, high);
+			left.fork();
+			right.fork();
+			long lSum = left.join();
+			long rSum = right.join(); // or long rSum = right.compute(); 
+						  // if you don want to waste threads
+			return lSum + rSum;
+		}		
+	}
+
+}
+
+public class Sum {
+	public static void main(String[] args) {
+		int size = Integer.parseInt(args[0]);
+		int[] a = new int[size];
+	for (int i = 0; i < size; i++)
+		a[i] = i;
+	}
+
+}
+
+interface List{
+	void add(String s);
+	String get(int i) throws BadIndexException;
+}
+
+class BadIndexException extends Exception {}
+
+class ListImpl implements List{
+	private String[] arr = new String[10];
+	private int size = 0;
+
+	public void add(String s) {
+		arr[size] = s;
+		size++;
+		//you need to implement dynamically but ignore it
+		// in java when we attempt to add a 11th item it will raise
+		//execption
+		// in c it will let it run
+	}
+
+	public String get(int i) throws BadIndexException {
+		if (i >= 0 && i < size)
+			return arr[i];
+		else
+			throw new BadindexException();
+	}
+}
+
+class Client{
+
+	public static void main(String[] args) throws BadindexException
+	{
+		
+
+	
+		List l = new ListImpl();
+		l.add("hi");
+		try {System.out.println(l.get(0));}
+		catch(BadIndexException e) {
+			System.out.println("bad index");
+		}	
+	}
+      /*
+		or  do this:
+
+		public static void main(String[] args) 
+	{
+		
+
+	
+		List l = new ListImpl();
+		l.add("hi");
+		System.out.println(new Client().myget(l,3));
+			
+	}
+	
+	String myget(List l, int i) {
+		try{ return l.get(i) }
+		catch(BadIndexException e){
+			return "bad index"; //bad idea
+		}
+	}		
+     */
+
+}
+/************/
+	
+//Exception safety
+//how do you make sure to leave object state into a safe configuration regardless
+//of what exceptions occur and when?
+
+class XException extends Exception{}
+class YException extends Exception{}
+
+class ExnSafety {
+	private int x,y;
+	
+	void updateX(){
+
+	}
+	
+	void update() {
+	
+	}
+
+	//requirement: either both updated or neither updated
+	//assume that if exception is thrown then havent been update for respective x or y
+	void updateBoth() throws XException, YException {
+		int oldx = x;
+		int oldy = y;		
+		try {
+		updateX();
+		updateY();
+		}catch(XException e) {
+			x = oldx;
+			throw e;
+		}catch(YExecption e) {
+			x = oldx;
+			y = oldy;
+			throw e
+		}
+	}
+}
+
+class ComputeException extends Exception{}
+
+class Example2{
+
+	void compute() throws ComputeException {
+		//....
+		try{}
+		catch(ComputeException e){
+			//clean up
+			throw e;
+		}
+	}
+
+	void readFileandCompute(File f) throws ComputeException{
+		String s = f.read();
+		try {this.compute(s);}
+		finally {f.close();}
+	}
+
+}
+============================================================================================
+week 8.2
+============================================================================================
+
+logic /declarative / constraint-based programming
+---------------------------------------------------
+
+transition from "how" to " what"
+
+example: from assembly to C
+-variables are a "what"
+-loops, conditionals
+
+examples from class in java:
+
+-multithread
+-fork-join frameqork
+-stream library
+
+idea: use logic as the univeresal "what" language
+
+challenge: huge search space to find a satisfying solution
+
+applications today:
+-database querying 
+-big data analytics
+-spark has shark(used o be spark sql)
+-hadoop has Pig
+-Hive from facebook has HiveQl
+-user interface layout
+*user interface layout
+-example: Mac/IOS auto layout
+-specify constraints among windows
+
+Gnu prolog (gprolog.org)
+
+/*notes.pl*/
+
+prereq(cs31,cs32).
+prereq(cs32,cs33).
+...
+
+/*
+cs31 is an uninterpreted constant
+prereq is a predicate symbol
+
+prolog doesnt know what prereq or cs31 is 
+
+go onto gprolog terminal
+
+| ?- prereq(cs131, X).
+
+X = cs132
+
+yes
+
+|? - prereq(X,cs131).
+
+X= cs32?;
+X= cs33?;
+C = cs35L?;
+
+yes
+
+| ?- prereq(X,X).
+
+no
+
+|? prereq(cs32,X), prereq(cs32), X\= Y   \\give me all the X and Y's where X is not equal to Y
+
+|? ?*find ttwo courses that have the a prereq in common */
+
+prereq(Z,X), prereq(Z,Y), X \= Y
+
+X = cs32
+Y = cs35l
+Z = cs31
+
+*/
+
+/*a rule is a way of deriving new facts from old facts*/
+
+/*preOfPre(X,Y) is true if X is a prereq of a prereq of Y
+we could do new facts but instead we can write a new rule*/
+
+preOFPre(X,Y) :- prereq(X,Z), prereq(Z,Y).
+
+
+/*preTrans(X,Y) is true if X is a transitive prereq of Y*/
+preTrans(X,Y) :- prereq(X,Y).
+preTrans(X,Y) :- preTrans(X,Z), prereq(Z,Y). 
+/*translation in first-order logic:
+
+forall X,Y. (exists Z. prereq(X,Z) && prereq(Z,Y)) ==> preofPre(X,y)*/
+
+I can build my own data structures
+
+|?- cons(1,cons(2,nil)) = cons(X,Y)
+
+X = 1
+Y = cons(2,nul)
+
+| ?- append(X,[1,2,3,4],[3,4])
+
+
+/*
+write append in ocaml
+
+let rec append l1 l2 =
+match l1 with 
+[] -> l2
+| h::t -> h::(append t l2)
+*/
+
+/*write it in prolog*/
+
+app([],L2,L2).
+app([|T], L2,[H|R]) :- app(T,L2,R).
+
+/*
+in ocaml
+let rec reverse l = 
+match l with
+[] -> []
+| h::t ->
+   let r = (reverese t) in 
+    r@h]
+
+*/
+
+/*
+in prolog
+rev([],[])
+rev([H|T], Q) :- rev(T,R), append(R,[H],Q) 
+*/
+
+/*
+puzzle solving with prolog
+
+wolf-goat-cabbage puzzle
+
+initial state: [west,west,west,west]
+goal state: [east,east,east,east]
+
+what are the moves?
+wolf,goat,cabbage,none
+
+predicate move(State1, Move, State2) should be true if 
+starting from State1 and doing move Move will get you to State2
+
+
+*/
+opposite(west,east).
+opposite(east,west).
+
+move([P,W,G,C],wolf,[PNew,PNew,G,C]) :- 
+P=W, opposite(G,C), opposite(P,PNew).
+
+move([P,W,G,C],goat,[PNew,W,PNew,C]) :- 
+P=G, opposite(P,PNew).
+
+move([P,W,G,C],cabbage,[PNew,W,G,PNew]) :- 
+P=C, opposite(W,G), opposite(P,PNew).
+
+move([P,W,G,C],none,[PNew,W,G,C]) :- 
+opposite(W,G), opposite(G,C), opposite(P,PNew).
+
+/*now we have to define a predicate that drives to solve the puzzle
+
+wolfPuzzle(State1,Moves,State2) is true
+if starting from State1 and executing the moves in Moves, we end up in State2*/
+
+wolfPuzzle(S,[],S).
+wolfPuzzle(S1,[M|Ms], S3) := move(S1,M,S2), wolfPuzzle(S2,Ms,S3).
+
+on the interpreter:
+
+|?- length(Moves,L), wolfPuzzle([west,west,west,west], moves, S)
+/*this will do bread first search*/
+
+|?- wolfPuzzle([west,west,west,west], moves, S)
+/*this is dfs*/
+
+Length(Moves,L), wolfPuzzle([west,west,west,west], Moves, [east,east,east,east]);
+
+L = 7
+Moves = [...soln of length 7...]
+
+============================================================================================
+week 9.1
+============================================================================================
+
+Unification 
+-----------
+takes two terms t1 and t2 and returns either NO or an environment(
+mapping variables to terms) that makes t1 and t2 syntatically identical
+syntax of terms:
+
+t ::= c | X | c(t1,...,tn)
+c ::= constant (lowercase identifier)
+x :: variable (Uppercase identifier)
+
+psuedocode for unification:
+
+c = c ----> {}
+X = t ----> {X:t}
+t = X ----> {X:t}
+
+c(t1,t2) = c(t1',t2') ---> 
+	result1 = (t1=t1')
+	result2 = (t2=t2')
+	if (result1 == NO || result2 == NO) then
+		return NO
+	else
+	return result1 U result2
+
+otherwise
+	NO
+
+
+example:
+
+g(a,X,X) = g(T,a,Z)
+
+a = Y ---> {Y:a} (call this e1)
+
+e1(X) = e1(a)
+X = a ---> {X:a} (call this e2)
+
+e1(e2(X)) = e1(e2(Z))
+a = Z ---> {Z:a} {call this e3}
+
+return e1 U e2 U e3
+
+example2: g(X,X,a) = g(Z,a,Y)
+
+X = Z ---> {X:Z} (called e1)
+e1{X} = e1{a}
+Z = a ---> {Z:a} (called e2)
+
+e1(e2(a)) = e1(e2(Y))
+a = Y ---> {Y:a} 
+
+return e1 U e2 U e3
+
+Note: this union has to "chase" the constraints to ensure that no 
+variable in the domain of the enviroment also appears in the range of 
+the environment
+	
+example with functions:
+
+preOfPre(Y,Z) :- prereq(Y,P), prereqy(P,Z)
+
+building a tree:
+
+two kinds of nodes:
+-goal node: stack of goals that need to be proven
+- NO node: leaf
+
+Root: goal node with a single goal, the original query
+
+every goal node has k children, where k is the number of facts/rules in the program
+-left to right in program order
+
+If the first goal does not unify with the head of the kth fact/rule:
+ - the kth child is a NO node
+
+otherwise 
+-the jth child is a goal node
+pop off the first goal from the parent 
+push any new subgoals from the kth rule
+
+if I do
+
+p.
+p :- p.
+
+then the it would give you a soln true
+until it gives up
+
+if i do
+p :- p.
+p
+
+the tree is mirrored so we get 
+stack overflow 
+
+============================================================================================
+week 10.1
+============================================================================================
+proof trees
+[pofp(cs32,c)] start with this subgoal then we go to
+preOfPre(X,Y):- prereq(X,P), prereq(P,Y).
+
+then we pop our pofp(cs32,c) and we push in 
+[p(cs32,P),p(P,Y)]
+
+aritmetic
+
+temp(C,F):- F is 1.8 * C + 32.0 
+
+len([],0).
+len([_|T],N):-len(T,L),N is L + 1.
+
+max(X,Y,X) :- X >= Y.
+max(X,Y,Y) :- X <Y
+
+============================================================================================
+week 10.2
+============================================================================================
+suppose you are trying to build a user interface, 
+
+in java:
+
+interface Event {}
+
+class MouseDownEvent implements Event {}
+class MouseUpEvent implements Event{}
+class KeyPressEvent implements Event{}
+
+interface Handler {
+	void handle(Event);
+}
+
+class MyGui implements Handler {
+	void handle (Event e) {
+	if (e instanceof MouseDownEvent)
+		MouseDownEvent mde = (MouseDownEvent)e;
+	}
+	else if( e instanceof MouseUpEvent)
+	{
+		MouseUpEvent mue = (MouseUpEvent)e;
+	}
+
+	/*
+	non solution
+	void handle(MouseDownEvent mde){...}
+	void handle(MouseUpEvent mue){...}
+
+	*/
+	}
+}
+
+/*
+static overloading is same function name with different arguments
+so this a non solution because the compiler will always configure to go to handle(Event e)
+dynamic dispatch only works on the reciever object
+
+like what if you do H.handle(e) dynamic dispatch doesnt event look at e
+
+*/
+
+class MyGui implements Handler {
+	
+	
+	void handle(Event@MouseDownEvent mde){...}
+	void handle(Event@MouseUpEvent mue){...}
+
+	
+	}
+}
+
+
+
+
+next example:
+
+class Stuff {
+	spec public int[] arr = {1,43,2,56};
+
+int simple(){
+	int x;
+	//complicated code
+	return x;
+}
+
+final exam:
+ocaml:
+recursion, high orderfunctions, datatypes, pattern matching, exceptions
+
+concepts:
+static vs dynamic typechecking
+static vs dynamic type scoping
+parametric polymorphism
+static overloading
+strong vs weak typechecking
+
+java:
+
+subtyping, inhheritance, dynamic dispatch
+memory- aliasing
+
+ex.
+
+List l1 = new LinkedList();
+l1.add("hello");
+
+List l2 = l1;
+
+parameter passsing
+by value vs by reference
+
+
+parametric polymorphism(generics)
+
+exceptions, throws and catch
+
+parallism: fork/join, streams
+
+Prolog:
+
+unification
+proof trees/ search trees
+
+unification is bvasically
+
+taking two terms and looking at the enviroment to see if there is
+a a match that will make both terms the same,
+= is the unification symbol, prolog will also return environment
+
+synatx of prolog terms:
+
+t := c | X | c(t1,..tn)
+
+Unification:
+
+c = c ---> {}
+X = t ----> {X:t}
+
+t = X ---> {X:t}
+
+c(t1,...tn) = c(t1',...,tn') --->
+
+t1 = t1' --> e1
+...
+tn = tn' ---> en
+
+if any of these return NO then return NO
+else return e1 ++ e2 ++ ... ++ en
+
+proof trees
+depth first left first search 

@@ -1,0 +1,49 @@
+let rec lengthbool (l : bool list) : int =
+  match l with
+    [] -> 0
+  | _::t -> 1 + (lengthbool t)
+
+let rec lengthint (l : int list) : int =
+ match l with
+    [] -> 0
+  | _::t -> 1 + (lengthint t)
+
+(*instead of doing the same functions I can us 'a list*)
+
+let rec length (l : 'a list) : int =
+   match l with
+    [] -> 0
+  | _::t -> 1 + (length t)
+
+(*
+'a is a *type variable*
+'a is implicitly instantiated on each call to length
+length (*int*) [1;2;3]
+length(*bool*) [true;false]
+
+in C we dont have type checking but we can kind of do this using void*
+ *)
+
+let rec (sumlist : 'a list -> int) =
+  fun l -> match l with
+    [] -> 0
+  | h::t -> h + sumlist t
+
+(* 
+ocaml that does not support overloadinf so you cannot use + for floats 
+you need to use +. 
+partially due to type inferences
+*)
+          
+let double x = x*2
+
+(*val double : int -> int = <fun>*)
+(*How to typecheck this call?
+#double 45;;
+
+-look up the type double : int -> int
+-compute the type 45 : int
+-check the actual and formal parameters types are equal
+ *)
+             
+             

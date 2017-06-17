@@ -1,0 +1,11 @@
+/*list_length(L,N)*/
+list_length([],0).
+list_length([_|T],N):-list_length(T,N1), N is N1 + 1.
+
+sumList([],0).
+umList([H|T],S):-sumList(T,s1),S is S1+H.
+
+append([],L,L).
+append([H|T],L2,[H|T3]):-append(T,L2,T3).
+
+prefix(P,L):-append(P,_,L).
